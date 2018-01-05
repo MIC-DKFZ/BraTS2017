@@ -22,37 +22,36 @@ import lasagne
 
 
 def build_net(input_var=None, input_shape=(128, 128, 128), num_output_classes=4, num_input_channels=4,
-              base_n_filter=8, do_instance_norm=True, batch_size=None, dropout_p=0.3, do_bn=True):
+              base_n_filter=8, do_instance_norm=True, batch_size=None, dropout_p=0.3, do_norm=True):
     nonlin = lasagne.nonlinearities.leaky_rectify
     if do_instance_norm:
         axes = (2, 3, 4)
     else:
         axes = 'auto'
 
-    def conv_bn_prelu(l_in, feat_out):
+    def conv_norm_lrelu(l_in, feat_out):
         l = Conv3DLayer(l_in, feat_out, 3, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
-        if do_bn:
+        if do_norm:
             l = BatchNormLayer(l, axes=axes)
         return NonlinearityLayer(l, nonlin)
 
-    def bn_prelu_conv(l_in, feat_out, stride=1, filter_size=3):
-        if do_bn:
+    def norm_lrelu_conv(l_in, feat_out, stride=1, filter_size=3):
+        if do_norm:
             l_in = BatchNormLayer(l_in, axes=axes)
         l = NonlinearityLayer(l_in, nonlin)
         return Conv3DLayer(l, feat_out, filter_size, stride, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
 
-    def prelu_conv(l_in, feat_out, stride=1, filter_size=3):
+    def lrelu_conv(l_in, feat_out, stride=1, filter_size=3):
         l = NonlinearityLayer(l_in, nonlin)
         return Conv3DLayer(l, feat_out, filter_size, stride, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
 
-    def bn_prelu_deconv_bn_prelu(l_in, feat_out):
-        # it's not deconv!
-        if do_bn:
+    def norm_lrelu_upscale_conv_norm_lrelu(l_in, feat_out):
+        if do_norm:
             l_in = BatchNormLayer(l_in, axes=axes)
         l = NonlinearityLayer(l_in, nonlin)
         l = Upscale3DLayer(l, 2)
         l = Conv3DLayer(l, feat_out, 3, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
-        if do_bn:
+        if do_norm:
             l = BatchNormLayer(l, axes=axes)
         l = NonlinearityLayer(l, nonlin)
         return l
@@ -68,80 +67,78 @@ def build_net(input_var=None, input_shape=(128, 128, 128), num_output_classes=4,
     l = Conv3DLayer(l, num_filters=base_n_filter, filter_size=3, stride=1, nonlinearity=linear, pad='same',
                     W=HeNormal(gain='relu'))
     l = DropoutLayer(l, dropout_p)
-    l = prelu_conv(l, base_n_filter, 1, 3)
+    l = lrelu_conv(l, base_n_filter, 1, 3)
     l = ElemwiseSumLayer((l, r))
     skip1 = NonlinearityLayer(l, nonlin)
-    if do_bn:
+    if do_norm:
         l = BatchNormLayer(l, axes=axes)
     l = NonlinearityLayer(l, nonlin)
 
     # first contracting_block
-    l = r = Conv3DLayer(l, base_n_filter*2, 3, 2, 'same', nonlinearity=linear, W=HeNormal(gain='relu')) #2
-    l = bn_prelu_conv(l, base_n_filter*2) #3
+    l = r = Conv3DLayer(l, base_n_filter*2, 3, 2, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
+    l = norm_lrelu_conv(l, base_n_filter*2)
     l = DropoutLayer(l, dropout_p)
-    l = bn_prelu_conv(l, base_n_filter*2) #3
+    l = norm_lrelu_conv(l, base_n_filter*2)
     l = ElemwiseSumLayer((l, r))
-    if do_bn:
+    if do_norm:
         l = BatchNormLayer(l, axes=axes)
     l = skip2 = NonlinearityLayer(l, nonlin)
 
     # second contracting block
-    l = r = Conv3DLayer(l, base_n_filter*4, 3, 2, 'same', nonlinearity=linear, W=HeNormal(gain='relu')) #4
-    l = bn_prelu_conv(l, base_n_filter*4) #5
+    l = r = Conv3DLayer(l, base_n_filter*4, 3, 2, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
+    l = norm_lrelu_conv(l, base_n_filter*4)
     l = DropoutLayer(l, dropout_p)
-    l = bn_prelu_conv(l, base_n_filter*4) #3
+    l = norm_lrelu_conv(l, base_n_filter*4)
     l = ElemwiseSumLayer((l, r))
-    if do_bn:
+    if do_norm:
         l = BatchNormLayer(l, axes=axes)
     l = skip3 = NonlinearityLayer(l, nonlin)
 
     # third contracting block
-    l = r = Conv3DLayer(l, base_n_filter*8, 3, 2, 'same', nonlinearity=linear, W=HeNormal(gain='relu')) #6
-    l = bn_prelu_conv(l, base_n_filter*8) #7
+    l = r = Conv3DLayer(l, base_n_filter*8, 3, 2, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
+    l = norm_lrelu_conv(l, base_n_filter*8)
     l = DropoutLayer(l, dropout_p)
-    l = bn_prelu_conv(l, base_n_filter*8) #3
+    l = norm_lrelu_conv(l, base_n_filter*8)
     l = ElemwiseSumLayer((l, r))
-    if do_bn:
+    if do_norm:
         l = BatchNormLayer(l, axes=axes)
     l = skip4 = NonlinearityLayer(l, nonlin)
 
     # fourth contracting block
-    l = r = Conv3DLayer(l, base_n_filter*16, 3, 2, 'same', nonlinearity=linear, W=HeNormal(gain='relu')) #6
-    l = bn_prelu_conv(l, base_n_filter*16) #7
+    l = r = Conv3DLayer(l, base_n_filter*16, 3, 2, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
+    l = norm_lrelu_conv(l, base_n_filter*16)
     l = DropoutLayer(l, dropout_p)
-    l = bn_prelu_conv(l, base_n_filter*16) #3
+    l = norm_lrelu_conv(l, base_n_filter*16)
     l = ElemwiseSumLayer((l, r))
-    # l = NonlinearityLayer(BatchNormLayer(l, axes=axes), nonlin)
-    l = bn_prelu_deconv_bn_prelu(l, base_n_filter*8) # 12
+    l = norm_lrelu_upscale_conv_norm_lrelu(l, base_n_filter*8)
 
     # first expanding block
-    l = Conv3DLayer(l, base_n_filter*8, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu')) #8
-    if do_bn:
+    l = Conv3DLayer(l, base_n_filter*8, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
+    if do_norm:
         l = BatchNormLayer(l, axes=axes)
     l = NonlinearityLayer(l, nonlin)
-    # l = bn_prelu_deconv_bn_prelu(l, 64) #9
 
     # second expanding block
     l = ConcatLayer((skip4, l), cropping=[None, None, 'center', 'center'])
-    l = conv_bn_prelu(l, base_n_filter*16) # 10
-    l = Conv3DLayer(l, base_n_filter*8, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))  # 11
-    l = bn_prelu_deconv_bn_prelu(l, base_n_filter*4) # 12
+    l = conv_norm_lrelu(l, base_n_filter*16)
+    l = Conv3DLayer(l, base_n_filter*8, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
+    l = norm_lrelu_upscale_conv_norm_lrelu(l, base_n_filter*4)
 
     # second expanding block
     l = ConcatLayer((skip3, l), cropping=[None, None, 'center', 'center'])
-    l = ds2 = conv_bn_prelu(l, base_n_filter*8) # 10
-    l = Conv3DLayer(l, base_n_filter*4, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))  # 11
-    l = bn_prelu_deconv_bn_prelu(l, base_n_filter*2) # 12
+    l = ds2 = conv_norm_lrelu(l, base_n_filter*8)
+    l = Conv3DLayer(l, base_n_filter*4, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
+    l = norm_lrelu_upscale_conv_norm_lrelu(l, base_n_filter*2)
 
     # third expanding block
     l = ConcatLayer((skip2, l), cropping=[None, None, 'center', 'center'])
-    l = ds3 = conv_bn_prelu(l, base_n_filter*4) # 13
-    l = Conv3DLayer(l, base_n_filter*2, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))  # 14
-    l = bn_prelu_deconv_bn_prelu(l, base_n_filter) # 15
+    l = ds3 = conv_norm_lrelu(l, base_n_filter*4)
+    l = Conv3DLayer(l, base_n_filter*2, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
+    l = norm_lrelu_upscale_conv_norm_lrelu(l, base_n_filter)
 
     # merge with skip1
     l = ConcatLayer((skip1, l), cropping=[None, None, 'center', 'center'])
-    l = conv_bn_prelu(l, base_n_filter*2)
+    l = conv_norm_lrelu(l, base_n_filter*2)
     l_pred = Conv3DLayer(l, num_output_classes, 1, pad='same', nonlinearity=None)
 
     ds2_1x1_conv = Conv3DLayer(ds2, num_output_classes, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))

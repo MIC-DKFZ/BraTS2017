@@ -237,7 +237,6 @@ def load_dataset(pat_ids=range(300), folder=paths.preprocessed_training_data_fol
 
 class BatchGenerator3D_random_sampling(DataLoaderBase):
     def __init__(self, data, BATCH_SIZE, num_batches, seed, patch_size=(128, 128, 128), convert_labels=False):
-        # patch_locs is an array of shape (patient_id, x, y, z)
         self.convert_labels = convert_labels
         self._patch_size = patch_size
         DataLoaderBase.__init__(self, data, BATCH_SIZE, num_batches, seed)

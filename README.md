@@ -23,8 +23,9 @@ You need to have the following python packages installed (may be incomplete):
 You need to have downloaded at least the BraTS 2017 training dataset.
 
 ## How to use
+
 ### Set paths
-We need to know where you saved the data and where you wish to have the results. Go into paths.py and modify the paths 
+We need to know where you saved the data and where you wish to save the results. Go into paths.py and modify the paths 
 to suit your setup.
 
 
