@@ -15,16 +15,17 @@
 
 import numpy as np
 from medpy import metric
-from scipy import ndimage
 import os
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from utils import reshape_by_padding_upper_coords
 from scipy.ndimage import binary_fill_holes
 
+
 def calculate_validation_metrics(image_pred, image_gt, do_resec=False):
     image_gt = np.array(image_gt)
     image_pred = np.array(image_pred)
+
     def calculate_metrics(mask1, mask2):
         try:
             true_positives = metric.obj_tpr(mask1, mask2)
@@ -160,50 +161,6 @@ def create_brain_masks(data):
             this_mask = binary_fill_holes(this_mask)
             brain_mask[b, c] = this_mask
     return brain_mask
-
-
-def create_ball_3d(size=11):
-    ball = np.zeros((size, size, size))
-    center_coords = np.array([(size-1)/2., (size-1)/2., (size-1)/2.])
-    radius = (size-1)/2.
-    for x in xrange(size):
-        for y in xrange(size):
-            for z in xrange(size):
-                dist = np.linalg.norm(np.array([x, y, z])-center_coords)
-                if dist <= radius:
-                    ball[x, y, z] = 1
-    return ball
-
-
-def post_process_prediction(prediction, min_size=3000):
-    # find connected components and remove small ones
-    # create structure element (ball)
-    if len(np.unique(prediction)) == 1:
-        return prediction
-    str_el = create_ball_3d(3)
-    img_2 = ndimage.binary_opening(prediction >= 1, str_el)
-    connected_components, n_components = ndimage.label(img_2) # 0 and 1 are background/brain
-    if n_components > 0:
-        discard_components = []
-        component_sizes = []
-        all_components = np.arange(n_components)+1
-        for component in all_components:
-            size_of_component = np.sum(connected_components == component)
-            if size_of_component < min_size:
-                discard_components.append(component)
-            component_sizes.append(size_of_component)
-        if len(discard_components) == n_components:
-            discard_components = np.array(discard_components)[discard_components!=np.argmax(component_sizes)]
-        keep_components = [i for i in all_components if i not in discard_components]
-        new_mask = np.zeros(prediction.shape, dtype=bool)
-        for keep_me in keep_components:
-            mask = ndimage.binary_dilation(connected_components == keep_me, create_ball_3d(5))
-            new_mask = (new_mask | mask)
-        prediction_cleaned = np.zeros(prediction.shape, dtype=np.int32)
-        prediction_cleaned[new_mask] = prediction[new_mask]
-        return prediction_cleaned
-    else:
-        return prediction
 
 
 def run_validation_mirroring(pred_fn, results_out_folder, use_patients, write_images=True,

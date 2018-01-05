@@ -4,6 +4,7 @@ Rankings can be viewed online: http://www.med.upenn.edu/sbia/brats2017/rankings.
 
 Like it is always the case with code that is written close to deadlines, it was originally not very user friendly. 
 We cleaned it up, but it may still not be perfectly clear. If you have any questions please do not hesitate to contact us!
+(f.isensee@dkfz.de)
 
 ## Prerequisites
 Only runs on python 2.7
@@ -16,6 +17,7 @@ You need to have the following python packages installed (may be incomplete):
 * scipy
 * sklearn
 * matplotlib
+* medpy
 * batchgenerators (get it here: https://github.com/MIC-DKFZ/batchgenerators)
 
 You need to have downloaded at least the BraTS 2017 training dataset.

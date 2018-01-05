@@ -27,16 +27,8 @@ from network_architecture import build_net
 import theano.tensor as T
 from dataset import load_dataset
 import paths
+from validate_network import preprocess
 
-
-def preprocess(data, bet_mask):
-    brain_mask = bet_mask
-    data = np.clip(data, -5, 5)
-    for c in range(data[0].shape[0]):
-        data[0][c] -= data[0][c][brain_mask[0, c] != 0].min()
-        data[0][c] /= data[0][c][brain_mask[0, c] != 0].max()
-        data[0][c, brain_mask[0, c] == 0] = 0
-    return data
 
 def run(fold=0):
     print fold
