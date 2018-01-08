@@ -148,7 +148,6 @@ def calculate_validation_metrics(image_pred, image_gt, do_resec=False):
                                 'Vol pred': np.sum(mask2),
                                 'Vol gt': np.sum(mask1)
                                 }
-    print class_metrics
     return accuracy, class_metrics
 
 
@@ -279,7 +278,6 @@ def run_validation_mirroring(pred_fn, results_out_folder, use_patients, write_im
         data = data[:, :, :shp[0], :shp[1], :shp[2]]
         seg_new = seg_new[:shp[0], :shp[1], :shp[2]]
         softmax_output = softmax_output[:, :shp[0], :shp[1], :shp[2]]
-        bayesian_segmentations = stacked.argmax(1)[:, :shp[0], :shp[1], :shp[2]]
 
         print predicted_segmentation.shape
 

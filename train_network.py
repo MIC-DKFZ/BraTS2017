@@ -106,7 +106,6 @@ def run(fold=0):
 
     # =================================================================================================================
 
-
     all_data = load_dataset()
     keys_sorted = np.sort(all_data.keys())
 
@@ -123,7 +122,6 @@ def run(fold=0):
 
     train_data = {i:all_data[i] for i in train_keys}
     test_data = {i:all_data[i] for i in test_keys}
-
 
     data_gen_train = create_data_gen_train(train_data, INPUT_PATCH_SIZE, num_classes, BATCH_SIZE,
                                            contrast_range=(0.75, 1.5), gamma_range = (0.8, 1.5),
@@ -152,7 +150,8 @@ def run(fold=0):
     # add some weight decay
     l2_loss = lasagne.regularization.regularize_network_params(output_layer_for_loss, lasagne.regularization.l2) * 1e-5
 
-    # the distinction between prediction_train and test is important only if we enable dropout
+    # the distinction between prediction_train and test is important only if we enable dropout (batch norm/inst norm
+    # does not use or save moving averages)
     prediction_train = lasagne.layers.get_output(output_layer_for_loss, x_sym, deterministic=False,
                                                  batch_norm_update_averages=False, batch_norm_use_averages=False)
 
@@ -174,10 +173,6 @@ def run(fold=0):
     params = lasagne.layers.get_all_params(output_layer_for_loss, trainable=True)
     learning_rate = theano.shared(base_lr)
     updates = lasagne.updates.adam(T.grad(loss, params), params, learning_rate=learning_rate, beta1=0.9, beta2=0.999)
-
-    # create a convenience function to get the segmentation
-    seg_output = lasagne.layers.get_output(seg_layer, x_sym, deterministic=True, batch_norm_update_averages=False,
-                                           batch_norm_use_averages=False)
 
     dc = hard_dice_per_img_in_batch(prediction_test, seg_sym.argmax(1), num_classes, BATCH_SIZE).mean(0)
 
@@ -214,7 +209,6 @@ def run(fold=0):
 
         epoch_start_time = time.time()
         learning_rate.set_value(np.float32(base_lr* lr_decay**(epoch)))
-        # class_weights = get_class_weights(class_frequencies, exp_schedule[epoch])
         print "epoch: ", epoch, " learning rate: ", learning_rate.get_value()
         train_loss = 0
         train_acc_tmp = 0
@@ -223,7 +217,6 @@ def run(fold=0):
         for data_dict in data_gen_train:
             data = data_dict["data"].astype(np.float32)
             seg = data_dict["seg_onehot"].astype(np.float32).transpose(0, 2, 3, 4, 1).reshape((-1, num_classes))
-            #s = seg.argmax(1).reshape((BATCH_SIZE, 128, 128, 128))
             if batch_ctr != 0 and batch_ctr % int(np.floor(n_batches_per_epoch/n_feedbacks_per_epoch)) == 0:
                 print "number of batches: ", batch_ctr, "/", n_batches_per_epoch
                 print "training_loss since last update: ", \

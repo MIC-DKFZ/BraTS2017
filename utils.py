@@ -38,6 +38,7 @@ def reshape_by_padding_upper_coords(image, new_shape, pad_value=None):
         res[0:0+int(shape[0]), 0:0+int(shape[1]), 0:0+int(shape[2])] = image
     return res
 
+
 def softmax_helper(x):
     e_x = T.exp(x - x.max(axis=1, keepdims=True))
     return e_x / e_x.sum(axis=1, keepdims=True)

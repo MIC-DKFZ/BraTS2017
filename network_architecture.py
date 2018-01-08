@@ -20,7 +20,6 @@ from lasagne.nonlinearities import linear
 import lasagne
 
 
-
 def build_net(input_var=None, input_shape=(128, 128, 128), num_output_classes=4, num_input_channels=4,
               base_n_filter=8, do_instance_norm=True, batch_size=None, dropout_p=0.3, do_norm=True):
     nonlin = lasagne.nonlinearities.leaky_rectify
@@ -56,11 +55,9 @@ def build_net(input_var=None, input_shape=(128, 128, 128), num_output_classes=4,
         l = NonlinearityLayer(l, nonlin)
         return l
 
-    #  Building the network
     l_in = InputLayer(shape=(batch_size, num_input_channels, input_shape[0], input_shape[1], input_shape[2]),
                       input_var=input_var)
 
-    # first layer
     l = r = Conv3DLayer(l_in, num_filters=base_n_filter, filter_size=3, stride=1, nonlinearity=linear, pad='same',
                         W=HeNormal(gain='relu'))
     l = NonlinearityLayer(l, nonlin)
@@ -74,7 +71,6 @@ def build_net(input_var=None, input_shape=(128, 128, 128), num_output_classes=4,
         l = BatchNormLayer(l, axes=axes)
     l = NonlinearityLayer(l, nonlin)
 
-    # first contracting_block
     l = r = Conv3DLayer(l, base_n_filter*2, 3, 2, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
     l = norm_lrelu_conv(l, base_n_filter*2)
     l = DropoutLayer(l, dropout_p)
@@ -84,7 +80,6 @@ def build_net(input_var=None, input_shape=(128, 128, 128), num_output_classes=4,
         l = BatchNormLayer(l, axes=axes)
     l = skip2 = NonlinearityLayer(l, nonlin)
 
-    # second contracting block
     l = r = Conv3DLayer(l, base_n_filter*4, 3, 2, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
     l = norm_lrelu_conv(l, base_n_filter*4)
     l = DropoutLayer(l, dropout_p)
@@ -94,7 +89,6 @@ def build_net(input_var=None, input_shape=(128, 128, 128), num_output_classes=4,
         l = BatchNormLayer(l, axes=axes)
     l = skip3 = NonlinearityLayer(l, nonlin)
 
-    # third contracting block
     l = r = Conv3DLayer(l, base_n_filter*8, 3, 2, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
     l = norm_lrelu_conv(l, base_n_filter*8)
     l = DropoutLayer(l, dropout_p)
@@ -104,7 +98,6 @@ def build_net(input_var=None, input_shape=(128, 128, 128), num_output_classes=4,
         l = BatchNormLayer(l, axes=axes)
     l = skip4 = NonlinearityLayer(l, nonlin)
 
-    # fourth contracting block
     l = r = Conv3DLayer(l, base_n_filter*16, 3, 2, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
     l = norm_lrelu_conv(l, base_n_filter*16)
     l = DropoutLayer(l, dropout_p)
@@ -112,31 +105,26 @@ def build_net(input_var=None, input_shape=(128, 128, 128), num_output_classes=4,
     l = ElemwiseSumLayer((l, r))
     l = norm_lrelu_upscale_conv_norm_lrelu(l, base_n_filter*8)
 
-    # first expanding block
     l = Conv3DLayer(l, base_n_filter*8, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
     if do_norm:
         l = BatchNormLayer(l, axes=axes)
     l = NonlinearityLayer(l, nonlin)
 
-    # second expanding block
     l = ConcatLayer((skip4, l), cropping=[None, None, 'center', 'center'])
     l = conv_norm_lrelu(l, base_n_filter*16)
     l = Conv3DLayer(l, base_n_filter*8, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
     l = norm_lrelu_upscale_conv_norm_lrelu(l, base_n_filter*4)
 
-    # second expanding block
     l = ConcatLayer((skip3, l), cropping=[None, None, 'center', 'center'])
     l = ds2 = conv_norm_lrelu(l, base_n_filter*8)
     l = Conv3DLayer(l, base_n_filter*4, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
     l = norm_lrelu_upscale_conv_norm_lrelu(l, base_n_filter*2)
 
-    # third expanding block
     l = ConcatLayer((skip2, l), cropping=[None, None, 'center', 'center'])
     l = ds3 = conv_norm_lrelu(l, base_n_filter*4)
     l = Conv3DLayer(l, base_n_filter*2, 1, 1, 'same', nonlinearity=linear, W=HeNormal(gain='relu'))
     l = norm_lrelu_upscale_conv_norm_lrelu(l, base_n_filter)
 
-    # merge with skip1
     l = ConcatLayer((skip1, l), cropping=[None, None, 'center', 'center'])
     l = conv_norm_lrelu(l, base_n_filter*2)
     l_pred = Conv3DLayer(l, num_output_classes, 1, pad='same', nonlinearity=None)

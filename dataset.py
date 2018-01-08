@@ -43,12 +43,12 @@ def extract_brain_region(image, segmentation, outside_value=0):
 
 def cut_off_values_upper_lower_percentile(image, mask=None, percentile_lower=0.2, percentile_upper=99.8):
     if mask is None:
-        mask = image!=image[0,0,0]
-    cut_off_lower = np.percentile(image[mask!=0].ravel(), percentile_lower)
-    cut_off_upper = np.percentile(image[mask!=0].ravel(), percentile_upper)
+        mask = image != image[0,0,0]
+    cut_off_lower = np.percentile(image[mask != 0].ravel(), percentile_lower)
+    cut_off_upper = np.percentile(image[mask != 0].ravel(), percentile_upper)
     res = np.copy(image)
-    res[(res < cut_off_lower) & (mask !=0 )] = cut_off_lower
-    res[(res > cut_off_upper) & (mask !=0 )] = cut_off_upper
+    res[(res < cut_off_lower) & (mask !=0)] = cut_off_lower
+    res[(res > cut_off_upper) & (mask !=0)] = cut_off_upper
     return image
 
 
@@ -73,7 +73,9 @@ def run(folder, out_folder, id, name, return_if_no_seg=True):
     flair_img = sitk.GetArrayFromImage(sitk.ReadImage(path.join(folder, "%s_flair.nii.gz" % name))).astype(np.float32)
     try:
         seg_img = sitk.GetArrayFromImage(sitk.ReadImage(path.join(folder, "%s_seg.nii.gz" % name))).astype(np.float32)
-    except RuntimeError, IOError:
+    except RuntimeError:
+        seg_img = np.zeros(t1_img.shape)
+    except IOError:
         seg_img = np.zeros(t1_img.shape)
 
     original_shape = t1_img.shape
@@ -112,7 +114,6 @@ def run(folder, out_folder, id, name, return_if_no_seg=True):
     flair_img, bbox = extract_brain_region(flair_img, brain_mask, 0)
     t1km_sub, bbox = extract_brain_region(t1km_sub, brain_mask, 0)
     seg_img, bbox = extract_brain_region(seg_img, brain_mask, 0)
-    # msk = extract_brain_region(brain_mask, brain_mask, 0)
 
     assert t1_img.shape == t1c_img.shape == t2_img.shape == flair_img.shape
     msk = t1_img != 0
@@ -256,7 +257,7 @@ class BatchGenerator3D_random_sampling(DataLoaderBase):
             types.append(self._data[i]['type'])
             patient_names.append(self._data[i]['name'])
             identifiers.append(self._data[i]['idx'])
-            # construct a batch, not very efficient but who tf cares, right
+            # construct a batch, not very efficient
             data_all = self._data[i]['data'][None]
             if np.any(np.array(data_all.shape[2:]) - np.array(self._patch_size) < 0):
                 new_shp = np.max(np.vstack((np.array(data_all.shape[2:])[None], np.array(self._patch_size)[None])), 0)
