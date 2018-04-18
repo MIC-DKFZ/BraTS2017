@@ -30,11 +30,11 @@ import paths
 def extract_brain_region(image, segmentation, outside_value=0):
     brain_voxels = np.where(segmentation != outside_value)
     minZidx = int(np.min(brain_voxels[0]))
-    maxZidx = int(np.max(brain_voxels[0]))
+    maxZidx = int(np.max(brain_voxels[0]))+1
     minXidx = int(np.min(brain_voxels[1]))
-    maxXidx = int(np.max(brain_voxels[1]))
+    maxXidx = int(np.max(brain_voxels[1]))+1
     minYidx = int(np.min(brain_voxels[2]))
-    maxYidx = int(np.max(brain_voxels[2]))
+    maxYidx = int(np.max(brain_voxels[2]))+1
 
     # resize images
     resizer = (slice(minZidx, maxZidx), slice(minXidx, maxXidx), slice(minYidx, maxYidx))
