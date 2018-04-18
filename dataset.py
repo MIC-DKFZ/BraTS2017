@@ -49,7 +49,7 @@ def cut_off_values_upper_lower_percentile(image, mask=None, percentile_lower=0.2
     res = np.copy(image)
     res[(res < cut_off_lower) & (mask !=0)] = cut_off_lower
     res[(res > cut_off_upper) & (mask !=0)] = cut_off_upper
-    return image
+    return res
 
 
 def run(folder, out_folder, id, name, return_if_no_seg=True):
@@ -87,11 +87,11 @@ def run(folder, out_folder, id, name, return_if_no_seg=True):
     # time this code was initially written. In order to not break anything we will keep it like it was
     brain_voxels = np.where(brain_mask != 0)
     minZidx = int(np.min(brain_voxels[0]))
-    maxZidx = int(np.max(brain_voxels[0]))
+    maxZidx = int(np.max(brain_voxels[0]))+1
     minXidx = int(np.min(brain_voxels[1]))
-    maxXidx = int(np.max(brain_voxels[1]))
+    maxXidx = int(np.max(brain_voxels[1]))+1
     minYidx = int(np.min(brain_voxels[2]))
-    maxYidx = int(np.max(brain_voxels[2]))
+    maxYidx = int(np.max(brain_voxels[2]))+1
     with open(os.path.join(out_folder, "%03.0d.pkl" % id), 'w') as f:
         dp = {}
         dp['orig_shp'] = original_shape
