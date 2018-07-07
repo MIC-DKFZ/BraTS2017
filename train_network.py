@@ -25,7 +25,7 @@ import cPickle
 from network_architecture import build_net
 from utils import printLosses
 from batchgenerators.transforms import DataChannelSelectionTransform, SegChannelSelectionTransform, SpatialTransform, \
-    Mirror, GammaTransform, ConvertSegToOnehotTransform, ContrastAugmentationTransform, BrightnessTransform, Compose
+    MirrorTransform, GammaTransform, ConvertSegToOnehotTransform, ContrastAugmentationTransform, BrightnessTransform, Compose
 from batchgenerators.dataloading import MultiThreadedAugmenter
 import time
 from utils import soft_dice_per_img_in_batch, hard_dice_per_img_in_batch
@@ -52,7 +52,7 @@ def create_data_gen_train(patient_data_train, INPUT_PATCH_SIZE, num_classes, BAT
     tr_transforms = []
     tr_transforms.append(DataChannelSelectionTransform([0, 1, 2, 3]))
     tr_transforms.append(GenerateBrainMaskTransform())
-    tr_transforms.append(Mirror())
+    tr_transforms.append(MirrorTransform())
     tr_transforms.append(SpatialTransform(INPUT_PATCH_SIZE, list(np.array(INPUT_PATCH_SIZE)//2.),
                                        do_elastic_deform=do_elastic_transform, alpha=alpha, sigma=sigma,
                                        do_rotation=do_rotation, angle_x=a_x, angle_y=a_y, angle_z=a_z,
