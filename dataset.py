@@ -49,7 +49,7 @@ def cut_off_values_upper_lower_percentile(image, mask=None, percentile_lower=0.2
     res = np.copy(image)
     res[(res < cut_off_lower) & (mask !=0)] = cut_off_lower
     res[(res > cut_off_upper) & (mask !=0)] = cut_off_upper
-    return image
+    return res
 
 
 def run(folder, out_folder, id, name, return_if_no_seg=True):
