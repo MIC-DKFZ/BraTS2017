@@ -6,6 +6,9 @@ Like it is always the case with code that is written close to deadlines, it was 
 We cleaned it up, but it may still not be perfectly clear. If you have any questions please do not hesitate to contact us!
 (f.isensee@dkfz.de)
 
+### Windows is not supported!
+Batchgenerators (which we use in training) do not work with Windows yet, so you won't be able to run the training if you are on Windows. Sorry for the inconvenience
+
 ## Prerequisites
 Only runs on python 2.7
 
