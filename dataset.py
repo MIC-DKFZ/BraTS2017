@@ -30,11 +30,11 @@ import paths
 def extract_brain_region(image, segmentation, outside_value=0):
     brain_voxels = np.where(segmentation != outside_value)
     minZidx = int(np.min(brain_voxels[0]))
-    maxZidx = int(np.max(brain_voxels[0]))
+    maxZidx = int(np.max(brain_voxels[0]))+1
     minXidx = int(np.min(brain_voxels[1]))
-    maxXidx = int(np.max(brain_voxels[1]))
+    maxXidx = int(np.max(brain_voxels[1]))+1
     minYidx = int(np.min(brain_voxels[2]))
-    maxYidx = int(np.max(brain_voxels[2]))
+    maxYidx = int(np.max(brain_voxels[2]))+1
 
     # resize images
     resizer = (slice(minZidx, maxZidx), slice(minXidx, maxXidx), slice(minYidx, maxYidx))
@@ -87,11 +87,11 @@ def run(folder, out_folder, id, name, return_if_no_seg=True):
     # time this code was initially written. In order to not break anything we will keep it like it was
     brain_voxels = np.where(brain_mask != 0)
     minZidx = int(np.min(brain_voxels[0]))
-    maxZidx = int(np.max(brain_voxels[0]))
+    maxZidx = int(np.max(brain_voxels[0]))+1
     minXidx = int(np.min(brain_voxels[1]))
-    maxXidx = int(np.max(brain_voxels[1]))
+    maxXidx = int(np.max(brain_voxels[1]))+1
     minYidx = int(np.min(brain_voxels[2]))
-    maxYidx = int(np.max(brain_voxels[2]))
+    maxYidx = int(np.max(brain_voxels[2]))+1
     with open(os.path.join(out_folder, "%03.0d.pkl" % id), 'w') as f:
         dp = {}
         dp['orig_shp'] = original_shape
